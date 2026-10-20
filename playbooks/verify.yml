@@ -26,7 +26,7 @@
       register: verify_ufw
       changed_when: false
 
-    - name: ufw is active and denies inbound by default
+    - name: Firewall (ufw) is active and denies inbound by default
       ansible.builtin.assert:
         that:
           - "'Status: active' in verify_ufw.stdout"
@@ -34,7 +34,7 @@
         fail_msg: host firewall is off or allows inbound by default
         quiet: true
 
-    - name: fail2ban has the sshd jail loaded
+    - name: Fail2ban has the sshd jail loaded
       ansible.builtin.command: fail2ban-client status sshd
       changed_when: false
 
