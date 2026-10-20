@@ -3,3 +3,6 @@
   ansible.builtin.service:
     name: fail2ban
     state: restarted
+  # In --check on a host where the package isn't installed yet, there is
+  # nothing to restart.
+  when: not (ansible_check_mode and (fail2ban_install | default({})) is changed)
