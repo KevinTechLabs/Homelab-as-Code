@@ -2,3 +2,7 @@
 fail2ban_bantime: 1h
 fail2ban_findtime: 10m
 fail2ban_maxretry: 5
+
+# Jails from older setups to switch off (for example a jail for a service that
+# moved to another host). Written to a zz- file so it loads last and wins.
+fail2ban_disabled_jails: []
