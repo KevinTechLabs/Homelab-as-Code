@@ -73,7 +73,7 @@ jobs:
             --skip-tags docker,tailscale
           if ! grep -Eq 'changed=0 +unreachable=0 +failed=0' second-run.log; then
             # name every task that changed on the second run
-            awk '/^TASK \[/ { t = $0 } /^changed:/ { print "::error title=Not idempotent::" t }' second-run.log
+            awk '/^TASK \[/ { t = $0; sub(/ \*+$/, "", t) } /^changed:/ { print "::error title=Not idempotent::" t " " $0 }' second-run.log
             exit 1
           fi
 
