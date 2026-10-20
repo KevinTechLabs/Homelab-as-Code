@@ -7,7 +7,6 @@ common_packages:
   - jq
   - unattended-upgrades
   - apt-listchanges
-  - python3-lxml        # needed by community.general.xml (Wazuh agent config)
 
 # Kernel network hardening. Docker hosts keep ip_forward on (set by Docker).
 common_sysctl:

@@ -24,18 +24,20 @@
     name: wazuh-agent
     selection: hold
 
+# ossec.conf has more than one <ossec_config> root, so it isn't valid XML and
+# XML tools refuse it. These edits match one element each instead.
 - name: Point the agent at the manager
-  community.general.xml:
+  ansible.builtin.replace:
     path: "{{ wazuh_agent_ossec_conf }}"
-    xpath: /ossec_config/client/server/address
-    value: "{{ wazuh_agent_manager_ip }}"
+    regexp: '<address>[^<]*</address>'
+    replace: '<address>{{ wazuh_agent_manager_ip }}</address>'
   notify: Restart wazuh-agent
 
 - name: Set active response (disabled = send-only agent)
-  community.general.xml:
+  ansible.builtin.replace:
     path: "{{ wazuh_agent_ossec_conf }}"
-    xpath: /ossec_config/active-response/disabled
-    value: "{{ 'yes' if wazuh_agent_active_response_disabled else 'no' }}"
+    regexp: '(<active-response>\s*<disabled>)(?:yes|no)(</disabled>)'
+    replace: '\g<1>{{ "yes" if wazuh_agent_active_response_disabled else "no" }}\g<2>'
   notify: Restart wazuh-agent
 
 - name: Store the enrollment password
