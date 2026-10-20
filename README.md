@@ -2,7 +2,7 @@
 
 Ansible playbooks that rebuild any Linux host in my [Desk Pi Rack](https://github.com/KevinTechLabs/Desk-Pi-Rack) from a fresh OS install: SSH lockdown, fail2ban, a per-host firewall, Docker, Tailscale and the [Wazuh](https://github.com/KevinTechLabs/Homelab-SIEM-Detection-Lab) agent. Every setting comes from the hardening I first did by hand and wrote up in the rack docs. This repo turns those write-ups into code that can be re-run, reviewed and tested.
 
-Addresses in this repo use the same fake `10.20.x.x` plan as the rack docs. No credentials, keys or real IPs are published.
+Addresses in this repo use the same fake `10.20.x.x` plan as the rack docs. Real ones live in a git-ignored `site.yml`, so no credentials, keys or real IPs are published.
 
 ## Why
 
@@ -42,6 +42,9 @@ The differences between hosts live in [`inventory/host_vars/`](inventory/host_va
 
 ```bash
 ansible-galaxy collection install -r requirements.yml
+
+# Your real addresses, subnets and username (git-ignored)
+cp inventory/group_vars/all/site.yml.example inventory/group_vars/all/site.yml
 
 # Secrets (Tailscale auth key, optional Wazuh enrollment password)
 cp inventory/group_vars/all/vault.yml.example inventory/group_vars/all/vault.yml
