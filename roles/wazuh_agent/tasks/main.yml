@@ -1,4 +1,12 @@
 ---
+# Servers set up by hand from the vendor's instructions have a .list file
+# for this repo with a different key path. apt refuses two entries with
+# conflicting Signed-By values, so the old file goes before ours is added.
+- name: Remove the hand-made wazuh repo file
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/wazuh.list
+    state: absent
+
 - name: Add the Wazuh apt repository
   ansible.builtin.deb822_repository:
     name: wazuh
@@ -9,6 +17,7 @@
     signed_by: https://packages.wazuh.com/key/GPG-KEY-WAZUH
 
 - name: Install the agent at the manager's exact version
+  register: wazuh_agent_install
   ansible.builtin.apt:
     name: "wazuh-agent={{ wazuh_agent_version }}-1"
     state: present
@@ -17,42 +26,47 @@
   environment:
     WAZUH_MANAGER: "{{ wazuh_agent_manager_ip }}"
 
-# An agent newer than the manager can't connect, and Kali's rolling updates
-# would upgrade it within weeks.
-- name: Hold the agent package at that version
-  ansible.builtin.dpkg_selections:
-    name: wazuh-agent
-    selection: hold
+# Everything below edits or starts the installed agent. In --check on a host
+# that doesn't have it yet, there is nothing to edit, so it is skipped.
+- name: Configure and start the agent
+  when: not (ansible_check_mode and wazuh_agent_install is changed)
+  block:
+    # An agent newer than the manager can't connect, and Kali's rolling
+    # updates would upgrade it within weeks.
+    - name: Hold the agent package at that version
+      ansible.builtin.dpkg_selections:
+        name: wazuh-agent
+        selection: hold
 
-# ossec.conf has more than one <ossec_config> root, so it isn't valid XML and
-# XML tools refuse it. These edits match one element each instead.
-- name: Point the agent at the manager
-  ansible.builtin.replace:
-    path: "{{ wazuh_agent_ossec_conf }}"
-    regexp: '<address>[^<]*</address>'
-    replace: '<address>{{ wazuh_agent_manager_ip }}</address>'
-  notify: Restart wazuh-agent
+    # ossec.conf has more than one <ossec_config> root, so it isn't valid XML and
+    # XML tools refuse it. These edits match one element each instead.
+    - name: Point the agent at the manager
+      ansible.builtin.replace:
+        path: "{{ wazuh_agent_ossec_conf }}"
+        regexp: '<address>[^<]*</address>'
+        replace: '<address>{{ wazuh_agent_manager_ip }}</address>'
+      notify: Restart wazuh-agent
 
-- name: Set active response (disabled = send-only agent)
-  ansible.builtin.replace:
-    path: "{{ wazuh_agent_ossec_conf }}"
-    regexp: '(<active-response>\s*<disabled>)(?:yes|no)(</disabled>)'
-    replace: '\g<1>{{ "yes" if wazuh_agent_active_response_disabled else "no" }}\g<2>'
-  notify: Restart wazuh-agent
+    - name: Set active response (disabled = send-only agent)
+      ansible.builtin.replace:
+        path: "{{ wazuh_agent_ossec_conf }}"
+        regexp: '(<active-response>\s*<disabled>)(?:yes|no)(</disabled>)'
+        replace: '\g<1>{{ "yes" if wazuh_agent_active_response_disabled else "no" }}\g<2>'
+      notify: Restart wazuh-agent
 
-- name: Store the enrollment password
-  ansible.builtin.copy:
-    dest: /var/ossec/etc/authd.pass
-    content: "{{ wazuh_agent_enrollment_password }}\n"
-    owner: root
-    group: wazuh
-    mode: "0640"
-  no_log: true
-  when: wazuh_agent_enrollment_password | length > 0
-  notify: Restart wazuh-agent
+    - name: Store the enrollment password
+      ansible.builtin.copy:
+        dest: /var/ossec/etc/authd.pass
+        content: "{{ wazuh_agent_enrollment_password }}\n"
+        owner: root
+        group: wazuh
+        mode: "0640"
+      no_log: true
+      when: wazuh_agent_enrollment_password | length > 0
+      notify: Restart wazuh-agent
 
-- name: Start the agent
-  ansible.builtin.service:
-    name: wazuh-agent
-    state: started
-    enabled: true
+    - name: Start the agent
+      ansible.builtin.service:
+        name: wazuh-agent
+        state: started
+        enabled: true

@@ -2,3 +2,4 @@
 .vault-pass*
 *-run.log
 verify.log
+inventory/local.yml

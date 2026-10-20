@@ -1,4 +1,27 @@
 ---
+- name: Gather installed packages
+  ansible.builtin.package_facts:
+
+# Swapping Ubuntu's docker.io for docker-ce on a running server stops every
+# container, so the playbook refuses and leaves that decision to a human.
+- name: Refuse to replace distro Docker on a running server
+  ansible.builtin.assert:
+    that: "'docker.io' not in ansible_facts.packages"
+    fail_msg: >-
+      This host runs Ubuntu's docker.io package. Set docker_install_method: distro
+      in its host_vars to keep it, or migrate to docker-ce in a maintenance window.
+    quiet: true
+  when: docker_install_method == 'upstream'
+
+# Servers set up by hand from the vendor's instructions have a .list file
+# for this repo with a different key path. apt refuses two entries with
+# conflicting Signed-By values, so the old file goes before ours is added.
+- name: Remove the hand-made docker repo file
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/docker.list
+    state: absent
+  when: docker_install_method == 'upstream'
+
 - name: Add Docker's apt repository
   ansible.builtin.deb822_repository:
     name: docker
@@ -11,6 +34,7 @@
   when: docker_install_method == 'upstream'
 
 - name: Install Docker Engine
+  register: docker_install
   ansible.builtin.apt:
     name: "{{ docker_packages if docker_install_method == 'upstream' else ['docker.io', 'docker-compose'] }}"
     state: present
@@ -36,6 +60,8 @@
     name: docker
     state: started
     enabled: true
+  # in --check on a host without Docker there is no service to look at yet
+  when: not (ansible_check_mode and docker_install is changed)
 
 # Same command as network/server-hardening.md, as code: 9443 only, the edge
 # agent port 8000 is never published, and the portainer_data volume is kept.
@@ -50,4 +76,6 @@
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
     state: started
-  when: docker_portainer_enabled
+  when:
+    - docker_portainer_enabled
+    - not (ansible_check_mode and docker_install is changed)

@@ -2,7 +2,8 @@
 # Defaults for every host. Anything secret lives in group_vars/all/vault.yml (template: vault.yml.example),
 # encrypted with ansible-vault (see README), never in plain text.
 
-admin_user: kevin                 # example name; override in an untracked file
+# The account Ansible logs in as. Set ansible_user in inventory/local.yml.
+admin_user: "{{ ansible_user | default('kevin') }}"
 timezone: America/Los_Angeles
 
 # Example subnets from the Desk-Pi-Rack zone plan
