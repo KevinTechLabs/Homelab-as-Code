@@ -46,10 +46,23 @@
     state: present
   when: docker_portainer_enabled
 
-- name: Configure the Docker daemon
+# Merge into the existing daemon.json instead of replacing it. Hosts can have
+# settings this role doesn't know about, like the NVIDIA runtime on the GPU
+# server; overwriting the file would silently break GPU containers.
+- name: Read the current Docker daemon config
+  ansible.builtin.slurp:
+    src: /etc/docker/daemon.json
+  register: docker_daemon_current
+  failed_when: false
+
+- name: Configure the Docker daemon (merged with existing settings)
   ansible.builtin.copy:
     dest: /etc/docker/daemon.json
-    content: "{{ docker_daemon_config | to_nice_json }}\n"
+    content: >-
+      {{ ((docker_daemon_current.content | b64decode | from_json)
+          if docker_daemon_current.content is defined else {})
+         | combine(docker_daemon_config, recursive=True)
+         | to_nice_json }}
     owner: root
     group: root
     mode: "0644"

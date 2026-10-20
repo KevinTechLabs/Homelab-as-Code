@@ -8,7 +8,8 @@
 # The account Ansible logs in as, and the only one allowed to SSH in
 admin_user: kevin
 ansible_user: "{{ admin_user }}"
-timezone: America/Los_Angeles
+# Servers stay on UTC so SIEM and firewall logs line up across hosts
+timezone: Etc/UTC
 
 # Host addresses: hosts.yml reads site_addresses.<host> and falls back to the
 # example address. The vault defaults to its Tailscale name.
