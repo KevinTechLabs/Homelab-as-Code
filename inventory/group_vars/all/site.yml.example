@@ -1,0 +1,21 @@
+---
+# Copy to site.yml (same folder) and fill in your real network.
+# site.yml is git-ignored, so real addresses never reach GitHub.
+
+admin_user: your-ssh-username
+
+site_addresses:
+  homelab: 192.168.1.X
+  aiserver: 192.168.1.X
+  pihole: 192.168.1.X
+  kali: 192.168.40.X
+  # vault: leave out to connect over Tailscale by name
+
+net_servers: 192.168.1.0/24
+net_trusted: 192.168.10.0/24
+net_lab: 192.168.40.0/24
+net_vault: 192.168.60.0/24
+pfsense_lan_ip: 192.168.1.1
+wazuh_agent_manager_ip: 192.168.1.X    # the server running Wazuh
+kali_lan_ip: 192.168.40.X
+vault_lan_ip: 192.168.60.X

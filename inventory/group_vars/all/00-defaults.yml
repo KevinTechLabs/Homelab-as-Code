@@ -1,12 +1,20 @@
 ---
-# Defaults for every host. Anything secret lives in group_vars/all/vault.yml (template: vault.yml.example),
-# encrypted with ansible-vault (see README), never in plain text.
+# Public defaults, using the example 10.20.x.x plan from the Desk-Pi-Rack docs.
+#
+# Real values go in site.yml in this folder (git-ignored, template:
+# site.yml.example). Files here load in name order, so site.yml overrides
+# this file. Secrets go in vault.yml, encrypted with ansible-vault.
 
-# The account Ansible logs in as. Set ansible_user in inventory/local.yml.
-admin_user: "{{ ansible_user | default('kevin') }}"
+# The account Ansible logs in as, and the only one allowed to SSH in
+admin_user: kevin
+ansible_user: "{{ admin_user }}"
 timezone: America/Los_Angeles
 
-# Example subnets from the Desk-Pi-Rack zone plan
+# Host addresses: hosts.yml reads site_addresses.<host> and falls back to the
+# example address. The vault defaults to its Tailscale name.
+site_addresses: {}
+
+# Subnets
 net_servers: 10.20.1.0/24
 net_trusted: 10.20.10.0/24
 net_lab: 10.20.40.0/24
@@ -14,6 +22,10 @@ net_vault: 10.20.60.0/24
 net_tailscale: 100.64.0.0/10
 pfsense_lan_ip: 10.20.1.1
 wazuh_agent_manager_ip: 10.20.1.20      # Wazuh runs in Docker on the home lab server
+
+# The two single-host exceptions allowed to reach the Wazuh manager
+kali_lan_ip: 10.20.40.10
+vault_lan_ip: 10.20.60.10
 
 # SSH: keys only, root off, only the admin account may log in
 ssh_allow_users: ["{{ admin_user }}"]

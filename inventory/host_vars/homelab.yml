@@ -6,8 +6,8 @@ ufw_rules:
   - {rule: allow, port: "8088", proto: tcp, comment: "Sentinel dashboard"}
   - {rule: allow, port: "1514:1515", proto: tcp, from: "{{ net_servers }}", comment: "Wazuh agents (Servers)"}
   - {rule: allow, port: "1514:1515", proto: tcp, from: "{{ net_trusted }}", comment: "Wazuh agents (Trusted)"}
-  - {rule: allow, port: "1514:1515", proto: tcp, from: 10.20.40.10, comment: "Wazuh agent (Kali, /32 exception)"}
-  - {rule: allow, port: "1514:1515", proto: tcp, from: 10.20.60.10, comment: "Wazuh agent (vault, /32 exception)"}
+  - {rule: allow, port: "1514:1515", proto: tcp, from: "{{ kali_lan_ip }}", comment: "Wazuh agent (Kali, /32 exception)"}
+  - {rule: allow, port: "1514:1515", proto: tcp, from: "{{ vault_lan_ip }}", comment: "Wazuh agent (vault, /32 exception)"}
   - {rule: allow, port: "5140", proto: udp, from: "{{ pfsense_lan_ip }}", comment: "pfSense syslog into Sentinel"}
   - {rule: allow, interface: tailscale0, direction: in, comment: "Tailscale"}
 
