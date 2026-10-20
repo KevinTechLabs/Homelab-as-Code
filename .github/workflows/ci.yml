@@ -64,17 +64,20 @@ jobs:
       # so those two roles are covered by lint and syntax check only.
       - name: First run (build from scratch)
         run: >-
-          ansible-playbook -i inventory/ci.yml playbooks/site.yml
+          tests/ci-run.sh first-run.log -i inventory/ci.yml playbooks/site.yml
           --skip-tags docker,tailscale
 
       - name: Second run must change nothing
         run: |
-          ansible-playbook -i inventory/ci.yml playbooks/site.yml \
-            --skip-tags docker,tailscale | tee second-run.log
-          grep -Eq 'changed=0 +unreachable=0 +failed=0' second-run.log \
-            || { echo "::error::playbook is not idempotent"; exit 1; }
+          tests/ci-run.sh second-run.log -i inventory/ci.yml playbooks/site.yml \
+            --skip-tags docker,tailscale
+          if ! grep -Eq 'changed=0 +unreachable=0 +failed=0' second-run.log; then
+            # name every task that changed on the second run
+            awk '/^TASK \[/ { t = $0 } /^changed:/ { print "::error title=Not idempotent::" t }' second-run.log
+            exit 1
+          fi
 
       - name: Verify the hardened state
         run: >-
-          ansible-playbook -i inventory/ci.yml playbooks/verify.yml
+          tests/ci-run.sh verify.log -i inventory/ci.yml playbooks/verify.yml
           -e verify_wazuh_connected=false
