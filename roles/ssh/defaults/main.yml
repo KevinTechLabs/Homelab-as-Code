@@ -1,0 +1,6 @@
+---
+ssh_max_auth_tries: 3
+ssh_client_alive_interval: 300
+# Refuse to disable password login unless the admin account has a key.
+# This is the guard that kept the CIS batches at zero lockouts.
+ssh_require_authorized_key: true

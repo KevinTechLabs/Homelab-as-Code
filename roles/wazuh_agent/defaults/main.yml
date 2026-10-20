@@ -1,0 +1,6 @@
+---
+wazuh_agent_version: 4.14.8
+wazuh_agent_manager_ip: 127.0.0.1
+wazuh_agent_active_response_disabled: false
+wazuh_agent_enrollment_password: "{{ vault_wazuh_enrollment_password | default('') }}"
+wazuh_agent_ossec_conf: /var/ossec/etc/ossec.conf

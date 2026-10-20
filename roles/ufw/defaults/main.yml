@@ -1,0 +1,9 @@
+---
+# Each rule: rule (allow/deny/limit), and either port (+ proto, from)
+# or interface + direction. "comment" shows up in `ufw status`.
+ufw_rules: []
+
+# Optional DOCKER-USER rules (Docker-published ports bypass ufw).
+# Each entry: {port, from}. Traffic to that port is allowed only from `from`.
+ufw_docker_user_rules: []
+ufw_docker_uplink: eth0

@@ -1,0 +1,50 @@
+---
+- name: Install ufw
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+
+# Rules go in before the policy flips to deny, so an SSH session in progress
+# is never cut off halfway through a run.
+- name: Add allow rules for this host
+  community.general.ufw:
+    rule: "{{ item.rule | default('allow') }}"
+    port: "{{ item.port | default(omit) }}"
+    proto: "{{ item.proto | default(omit) }}"
+    from_ip: "{{ item.from | default('any') }}"
+    interface: "{{ item.interface | default(omit) }}"
+    direction: "{{ item.direction | default(omit) }}"
+    comment: "{{ item.comment | default(omit) }}"
+  loop: "{{ ufw_rules }}"
+  loop_control:
+    label: "{{ item.comment | default(item.port | default(item.interface)) }}"
+
+- name: Limit Docker-published ports in DOCKER-USER
+  ansible.builtin.blockinfile:
+    path: /etc/ufw/after.rules
+    marker: "# {mark} HOMELAB-AS-CODE DOCKER-USER"
+    block: |
+      *filter
+      :DOCKER-USER - [0:0]
+      {% for r in ufw_docker_user_rules %}
+      -A DOCKER-USER -i {{ ufw_docker_uplink }} -p tcp -m conntrack --ctorigdstport {{ r.port }} --ctstate NEW -s {{ r.from }} -j RETURN
+      -A DOCKER-USER -i {{ ufw_docker_uplink }} -p tcp -m conntrack --ctorigdstport {{ r.port }} --ctstate NEW -j DROP
+      {% endfor %}
+      COMMIT
+  when: ufw_docker_user_rules | length > 0
+  notify: Reload ufw
+
+- name: Deny inbound by default
+  community.general.ufw:
+    direction: incoming
+    default: deny
+
+- name: Allow outbound by default (pfSense filters outbound per zone)
+  community.general.ufw:
+    direction: outgoing
+    default: allow
+
+- name: Enable ufw with logging
+  community.general.ufw:
+    state: enabled
+    logging: "low"

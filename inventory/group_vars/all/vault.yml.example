@@ -1,0 +1,12 @@
+---
+# Copy to vault.yml, fill in, then encrypt:
+#   ansible-vault encrypt inventory/group_vars/all/vault.yml
+# vault.yml is git-ignored unless encrypted (see .gitignore and the CI check).
+
+# Optional Wazuh enrollment password (authd). Leave empty if enrollment is open
+# to the agent subnets only, as in the SIEM lab.
+vault_wazuh_enrollment_password: ""
+
+# One-off, pre-tagged Tailscale auth key. Only needed the first time a host
+# joins; hosts already logged in are left alone.
+vault_tailscale_authkey: ""

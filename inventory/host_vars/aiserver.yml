@@ -1,0 +1,8 @@
+---
+# Ollama (11434) and web UIs (3000, 3100). Only Servers and Trusted may use them.
+ufw_rules:
+  - {rule: allow, port: "22", proto: tcp, from: "{{ net_servers }}", comment: "SSH (Servers)"}
+  - {rule: allow, port: "22", proto: tcp, from: "{{ net_trusted }}", comment: "SSH (Trusted)"}
+  - {rule: allow, port: "3000,3100,11434", proto: tcp, from: "{{ net_servers }}", comment: "AI services (Servers)"}
+  - {rule: allow, port: "3000,3100,11434", proto: tcp, from: "{{ net_trusted }}", comment: "AI services (Trusted)"}
+  - {rule: allow, interface: tailscale0, direction: in, comment: "Tailscale"}

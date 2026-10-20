@@ -1,0 +1,7 @@
+---
+tailscale_authkey: "{{ vault_tailscale_authkey | default('') }}"
+tailscale_tags: ["tag:server"]
+tailscale_hostname: "{{ inventory_hostname }}"
+# Kali tracks Debian testing; Tailscale publishes a Debian "sid" build for it
+tailscale_repo_distro: "{{ 'debian' if ansible_facts['distribution'] in ['Debian', 'Kali'] else 'ubuntu' }}"
+tailscale_repo_suite: "{{ 'sid' if ansible_facts['distribution'] == 'Kali' else ansible_facts['distribution_release'] }}"

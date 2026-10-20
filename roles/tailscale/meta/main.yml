@@ -1,0 +1,12 @@
+---
+galaxy_info:
+  author: KevinTechLabs
+  description: Tailscale with per-host tags (tag:server, tag:vault)
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions: [all]
+    - name: Debian
+      versions: [all]
+dependencies: []

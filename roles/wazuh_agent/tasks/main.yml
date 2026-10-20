@@ -1,0 +1,56 @@
+---
+- name: Add the Wazuh apt repository
+  ansible.builtin.deb822_repository:
+    name: wazuh
+    types: deb
+    uris: https://packages.wazuh.com/4.x/apt/
+    suites: stable
+    components: main
+    signed_by: https://packages.wazuh.com/key/GPG-KEY-WAZUH
+
+- name: Install the agent at the manager's exact version
+  ansible.builtin.apt:
+    name: "wazuh-agent={{ wazuh_agent_version }}-1"
+    state: present
+    update_cache: true
+    allow_downgrade: true
+  environment:
+    WAZUH_MANAGER: "{{ wazuh_agent_manager_ip }}"
+
+# An agent newer than the manager can't connect, and Kali's rolling updates
+# would upgrade it within weeks.
+- name: Hold the agent package at that version
+  ansible.builtin.dpkg_selections:
+    name: wazuh-agent
+    selection: hold
+
+- name: Point the agent at the manager
+  community.general.xml:
+    path: "{{ wazuh_agent_ossec_conf }}"
+    xpath: /ossec_config/client/server/address
+    value: "{{ wazuh_agent_manager_ip }}"
+  notify: Restart wazuh-agent
+
+- name: Set active response (disabled = send-only agent)
+  community.general.xml:
+    path: "{{ wazuh_agent_ossec_conf }}"
+    xpath: /ossec_config/active-response/disabled
+    value: "{{ 'yes' if wazuh_agent_active_response_disabled else 'no' }}"
+  notify: Restart wazuh-agent
+
+- name: Store the enrollment password
+  ansible.builtin.copy:
+    dest: /var/ossec/etc/authd.pass
+    content: "{{ wazuh_agent_enrollment_password }}\n"
+    owner: root
+    group: wazuh
+    mode: "0640"
+  no_log: true
+  when: wazuh_agent_enrollment_password | length > 0
+  notify: Restart wazuh-agent
+
+- name: Start the agent
+  ansible.builtin.service:
+    name: wazuh-agent
+    state: started
+    enabled: true

@@ -1,0 +1,12 @@
+---
+galaxy_info:
+  author: KevinTechLabs
+  description: Wazuh agent pinned and held at the manager version, optional send-only mode
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions: [all]
+    - name: Debian
+      versions: [all]
+dependencies: []

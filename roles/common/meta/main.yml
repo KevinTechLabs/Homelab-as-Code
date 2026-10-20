@@ -1,0 +1,12 @@
+---
+galaxy_info:
+  author: KevinTechLabs
+  description: Base packages, timezone, automatic updates, sysctl hardening
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions: [all]
+    - name: Debian
+      versions: [all]
+dependencies: []

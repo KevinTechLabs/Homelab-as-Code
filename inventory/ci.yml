@@ -1,0 +1,14 @@
+---
+# Used only by CI: the GitHub runner configures itself as a stand-in server.
+all:
+  hosts:
+    ci-runner:
+      ansible_connection: local
+      ansible_python_interpreter: /usr/bin/python3
+      admin_user: runner
+      ufw_rules:
+        - {rule: allow, port: "22", proto: tcp, comment: "SSH"}
+  children:
+    wazuh_agents:
+      hosts:
+        ci-runner:

@@ -1,0 +1,27 @@
+---
+# Rebuild any host in the rack from a fresh OS install:
+#   ansible-playbook playbooks/site.yml --limit homelab
+# Then prove it:
+#   ansible-playbook playbooks/verify.yml --limit homelab
+
+- name: Baseline every Linux host
+  hosts: all
+  become: true
+  roles:
+    - {role: common, tags: [common]}
+    - {role: ssh, tags: [ssh]}
+    - {role: fail2ban, tags: [fail2ban]}
+    - {role: tailscale, tags: [tailscale]}
+    - {role: ufw, tags: [ufw]}
+
+- name: Container hosts
+  hosts: docker_hosts
+  become: true
+  roles:
+    - {role: docker, tags: [docker]}
+
+- name: SIEM agents
+  hosts: wazuh_agents
+  become: true
+  roles:
+    - {role: wazuh_agent, tags: [wazuh]}

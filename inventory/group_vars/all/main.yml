@@ -1,0 +1,38 @@
+---
+# Defaults for every host. Anything secret lives in group_vars/all/vault.yml (template: vault.yml.example),
+# encrypted with ansible-vault (see README), never in plain text.
+
+admin_user: kevin                 # example name; override in an untracked file
+timezone: America/Los_Angeles
+
+# Example subnets from the Desk-Pi-Rack zone plan
+net_servers: 10.20.1.0/24
+net_trusted: 10.20.10.0/24
+net_lab: 10.20.40.0/24
+net_vault: 10.20.60.0/24
+net_tailscale: 100.64.0.0/10
+pfsense_lan_ip: 10.20.1.1
+wazuh_agent_manager_ip: 10.20.1.20      # Wazuh runs in Docker on the home lab server
+
+# SSH: keys only, root off, only the admin account may log in
+ssh_allow_users: ["{{ admin_user }}"]
+
+# fail2ban: home zones are whitelisted so a typo from the desktop can't lock
+# it out. IoT, Lab and Guest are deliberately NOT whitelisted.
+fail2ban_ignoreip:
+  - 127.0.0.1/8
+  - ::1
+  - "{{ net_servers }}"
+  - "{{ net_trusted }}"
+  - "{{ net_tailscale }}"
+
+# ufw: every host starts from default deny inbound. host_vars add the rules.
+ufw_rules: []
+
+# Wazuh agent pinned to the manager's version and held, so rolling distros
+# (Kali) can't upgrade the agent past the manager.
+wazuh_agent_version: 4.14.8
+wazuh_agent_active_response_disabled: false
+
+# Tailscale: servers are tag:server, the vault is tag:vault.
+tailscale_tags: ["tag:server"]

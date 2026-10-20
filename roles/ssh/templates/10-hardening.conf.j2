@@ -1,0 +1,14 @@
+# Managed by Ansible (Homelab-as-Code). Local edits are overwritten.
+# Drop-ins are read before the main sshd_config, so these values win.
+PermitRootLogin no
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PubkeyAuthentication yes
+AuthenticationMethods publickey
+AllowUsers {{ ssh_allow_users | join(' ') }}
+MaxAuthTries {{ ssh_max_auth_tries }}
+LoginGraceTime 30
+X11Forwarding no
+AllowAgentForwarding no
+ClientAliveInterval {{ ssh_client_alive_interval }}
+ClientAliveCountMax 2

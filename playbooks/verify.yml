@@ -1,0 +1,82 @@
+---
+# Checks the result, not the config files: what sshd actually enforces, what
+# ufw actually has loaded, what is actually listening. Fails loudly on drift.
+
+- name: Verify the hardened state
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Read the effective sshd settings
+      ansible.builtin.command: sshd -T
+      register: verify_sshd
+      changed_when: false
+
+    - name: SSH is key-only with root login off
+      ansible.builtin.assert:
+        that:
+          - "'permitrootlogin no' in verify_sshd.stdout_lines"
+          - "'passwordauthentication no' in verify_sshd.stdout_lines"
+          - "'kbdinteractiveauthentication no' in verify_sshd.stdout_lines"
+        fail_msg: sshd is accepting something other than keys
+        quiet: true
+
+    - name: Read ufw status
+      ansible.builtin.command: ufw status verbose
+      register: verify_ufw
+      changed_when: false
+
+    - name: ufw is active and denies inbound by default
+      ansible.builtin.assert:
+        that:
+          - "'Status: active' in verify_ufw.stdout"
+          - "'deny (incoming)' in verify_ufw.stdout"
+        fail_msg: host firewall is off or allows inbound by default
+        quiet: true
+
+    - name: fail2ban has the sshd jail loaded
+      ansible.builtin.command: fail2ban-client status sshd
+      changed_when: false
+
+    - name: List listening TCP sockets
+      ansible.builtin.command: ss -Htln
+      register: verify_listen
+      changed_when: false
+
+    - name: Loopback-only ports are not exposed on any interface
+      ansible.builtin.assert:
+        that:
+          - verify_listen.stdout_lines
+            | map('split') | map(attribute=3)
+            | select('search', ':' ~ item ~ '$')
+            | reject('search', '^(127\\.0\\.0\\.1|\\[::1\\]):')
+            | list | length == 0
+        fail_msg: "port {{ item }} is listening beyond loopback"
+        quiet: true
+      loop: "{{ verify_loopback_only_ports | default([]) }}"
+
+- name: Verify SIEM agents
+  hosts: wazuh_agents
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Agent package is held at the pinned version
+      ansible.builtin.command: dpkg-query -W -f='${Version} ${Status}' wazuh-agent
+      register: verify_wazuh_pkg
+      changed_when: false
+      failed_when: >-
+        not verify_wazuh_pkg.stdout.startswith(wazuh_agent_version ~ '-')
+        or 'hold' not in verify_wazuh_pkg.stdout
+
+    - name: Read the agent state
+      ansible.builtin.slurp:
+        src: /var/ossec/var/run/wazuh-agentd.state
+      register: verify_agent_state
+      when: verify_wazuh_connected | default(true) | bool
+
+    - name: Agent is connected to the manager
+      ansible.builtin.assert:
+        that: "\"status='connected'\" in (verify_agent_state.content | b64decode)"
+        fail_msg: agent is installed but not talking to the manager
+        quiet: true
+      when: verify_wazuh_connected | default(true) | bool

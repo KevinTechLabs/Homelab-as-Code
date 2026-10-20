@@ -1,0 +1,13 @@
+---
+# Vaultwarden Pi. See network/vault.md: nothing on the LAN may reach it.
+# ufw allows Tailscale only. No LAN SSH, not even from Trusted.
+ufw_rules:
+  - {rule: allow, interface: tailscale0, direction: in, comment: "Tailscale only"}
+
+tailscale_tags: ["tag:vault"]
+
+# Send-only agent: the SIEM may never run commands on the password vault.
+wazuh_agent_active_response_disabled: true
+
+# The vault must never listen on anything but loopback and Tailscale.
+verify_loopback_only_ports: [8080]

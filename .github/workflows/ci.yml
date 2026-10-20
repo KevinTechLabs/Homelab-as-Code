@@ -1,0 +1,80 @@
+---
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "23 10 * * 1" # weekly: catch upstream repo or package changes
+
+permissions: {}
+
+jobs:
+  lint:
+    name: Lint and syntax check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install tools
+        run: |
+          python3 -m pip install --user "ansible-core>=2.17,<2.20" ansible-lint yamllint
+          ansible-galaxy collection install -r requirements.yml
+
+      - name: Secrets file is encrypted (if present)
+        run: |
+          f=inventory/group_vars/all/vault.yml
+          if [ -f "$f" ] && ! head -1 "$f" | grep -q '^\$ANSIBLE_VAULT'; then
+            echo "::error file=$f::vault.yml is committed in plain text"; exit 1
+          fi
+
+      - run: yamllint --strict .
+      - run: ansible-lint --strict
+      - run: ansible-playbook playbooks/site.yml playbooks/verify.yml --syntax-check
+
+  converge:
+    name: Converge, idempotence, verify
+    needs: lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Ansible
+        run: |
+          python3 -m pip install --user "ansible-core>=2.17,<2.20"
+          ansible-galaxy collection install -r requirements.yml
+
+      # The SSH role refuses to disable passwords without a key (lockout guard),
+      # so give the runner account one, the same as a real admin would have.
+      - name: Give the runner an SSH key
+        run: |
+          ssh-keygen -t ed25519 -N '' -f ~/.ssh/id_ed25519 -q
+          cat ~/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keys
+
+      # Docker is already on the runner and Tailscale needs a real tailnet,
+      # so those two roles are covered by lint and syntax check only.
+      - name: First run (build from scratch)
+        run: >-
+          ansible-playbook -i inventory/ci.yml playbooks/site.yml
+          --skip-tags docker,tailscale
+
+      - name: Second run must change nothing
+        run: |
+          ansible-playbook -i inventory/ci.yml playbooks/site.yml \
+            --skip-tags docker,tailscale | tee second-run.log
+          grep -Eq 'changed=0 +unreachable=0 +failed=0' second-run.log \
+            || { echo "::error::playbook is not idempotent"; exit 1; }
+
+      - name: Verify the hardened state
+        run: >-
+          ansible-playbook -i inventory/ci.yml playbooks/verify.yml
+          -e verify_wazuh_connected=false

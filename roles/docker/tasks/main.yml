@@ -1,0 +1,53 @@
+---
+- name: Add Docker's apt repository
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: deb
+    uris: "https://download.docker.com/linux/{{ ansible_facts['distribution'] | lower }}"
+    suites: "{{ ansible_facts['distribution_release'] }}"
+    components: stable
+    architectures: "{{ 'arm64' if ansible_facts['architecture'] == 'aarch64' else 'amd64' }}"
+    signed_by: "https://download.docker.com/linux/{{ ansible_facts['distribution'] | lower }}/gpg"
+  when: docker_install_method == 'upstream'
+
+- name: Install Docker Engine
+  ansible.builtin.apt:
+    name: "{{ docker_packages if docker_install_method == 'upstream' else ['docker.io', 'docker-compose'] }}"
+    state: present
+    update_cache: true
+
+- name: Install the Python Docker SDK (for container tasks)
+  ansible.builtin.apt:
+    name: python3-docker
+    state: present
+  when: docker_portainer_enabled
+
+- name: Configure the Docker daemon
+  ansible.builtin.copy:
+    dest: /etc/docker/daemon.json
+    content: "{{ docker_daemon_config | to_nice_json }}\n"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart docker
+
+- name: Start Docker
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+
+# Same command as network/server-hardening.md, as code: 9443 only, the edge
+# agent port 8000 is never published, and the portainer_data volume is kept.
+- name: Run Portainer (HTTPS only, no edge-agent port)
+  community.docker.docker_container:
+    name: portainer
+    image: "{{ docker_portainer_image }}"
+    restart_policy: always
+    published_ports:
+      - "9443:9443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    state: started
+  when: docker_portainer_enabled

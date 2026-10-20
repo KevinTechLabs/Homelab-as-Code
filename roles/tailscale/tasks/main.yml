@@ -1,0 +1,41 @@
+---
+- name: Add the Tailscale apt repository
+  ansible.builtin.deb822_repository:
+    name: tailscale
+    types: deb
+    uris: "https://pkgs.tailscale.com/stable/{{ tailscale_repo_distro }}"
+    suites: "{{ tailscale_repo_suite }}"
+    components: main
+    signed_by: "https://pkgs.tailscale.com/stable/{{ tailscale_repo_distro }}/{{ tailscale_repo_suite }}.noarmor.gpg"
+
+- name: Install Tailscale
+  ansible.builtin.apt:
+    name: tailscale
+    state: present
+    update_cache: true
+
+- name: Start tailscaled
+  ansible.builtin.service:
+    name: tailscaled
+    state: started
+    enabled: true
+
+- name: Check whether this host is already on the tailnet
+  ansible.builtin.command: tailscale status --json
+  register: tailscale_status
+  changed_when: false
+  failed_when: false
+
+# Hosts already logged in are never re-authenticated, so re-running the
+# playbook can't knock the vault (Tailscale-only) off the network.
+- name: Join the tailnet with this host's tag
+  ansible.builtin.command: >-
+    tailscale up
+    --authkey={{ tailscale_authkey }}
+    --hostname={{ tailscale_hostname }}
+    --advertise-tags={{ tailscale_tags | join(',') }}
+  no_log: true
+  changed_when: true
+  when:
+    - tailscale_authkey | length > 0
+    - ((tailscale_status.stdout if tailscale_status.rc == 0 else '{}') | from_json).BackendState | default('') != 'Running'

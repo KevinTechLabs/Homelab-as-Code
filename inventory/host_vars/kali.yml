@@ -1,0 +1,7 @@
+---
+# Lab target. Isolated by pfSense; SSH stays off unless needed.
+ufw_rules:
+  - {rule: allow, interface: tailscale0, direction: in, comment: "Tailscale (admin access)"}
+
+# Kali is rolling and not in Docker's apt repo, so use the distro package.
+docker_install_method: distro

@@ -1,0 +1,22 @@
+---
+# "upstream" = Docker's own apt repo (Ubuntu, Debian, Raspberry Pi OS)
+# "distro"   = the distribution's docker.io package (Kali)
+docker_install_method: upstream
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+
+# Container logs are capped so a noisy container can't fill the disk
+docker_daemon_config:
+  log-driver: json-file
+  log-opts:
+    max-size: 10m
+    max-file: "3"
+  live-restore: true
+  no-new-privileges: true
+
+docker_portainer_enabled: false
+docker_portainer_image: portainer/portainer-ce:lts

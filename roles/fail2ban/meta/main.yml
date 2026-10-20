@@ -1,0 +1,12 @@
+---
+galaxy_info:
+  author: KevinTechLabs
+  description: fail2ban on sshd with the home zones whitelisted
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions: [all]
+    - name: Debian
+      versions: [all]
+dependencies: []

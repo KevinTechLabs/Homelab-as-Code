@@ -1,0 +1,11 @@
+# Managed by Ansible (Homelab-as-Code)
+[DEFAULT]
+ignoreip = {{ fail2ban_ignoreip | join(' ') }}
+bantime  = {{ fail2ban_bantime }}
+findtime = {{ fail2ban_findtime }}
+maxretry = {{ fail2ban_maxretry }}
+# journald works on every host here, including minimal Pi images with no auth.log
+backend  = systemd
+
+[sshd]
+enabled = true

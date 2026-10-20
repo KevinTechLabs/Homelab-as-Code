@@ -1,0 +1,28 @@
+---
+- name: Check that the admin account has an authorized key
+  ansible.builtin.stat:
+    path: "~{{ admin_user }}/.ssh/authorized_keys"
+  register: ssh_admin_keys
+  when: ssh_require_authorized_key
+
+- name: Stop before a lockout if no key is installed
+  ansible.builtin.assert:
+    that:
+      - ssh_admin_keys.stat.exists
+      - ssh_admin_keys.stat.size > 0
+      - admin_user in ssh_allow_users
+    fail_msg: >-
+      {{ admin_user }} has no authorized_keys (or is not in ssh_allow_users).
+      Disabling password login now would lock you out, so nothing was changed.
+    quiet: true
+  when: ssh_require_authorized_key
+
+- name: Write the SSH hardening drop-in
+  ansible.builtin.template:
+    src: 10-hardening.conf.j2
+    dest: /etc/ssh/sshd_config.d/10-hardening.conf
+    owner: root
+    group: root
+    mode: "0644"
+    validate: /usr/sbin/sshd -t -f %s
+  notify: Restart sshd

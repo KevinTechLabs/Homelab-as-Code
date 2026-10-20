@@ -1,0 +1,8 @@
+---
+# Pi-hole answers DNS for every zone (pfSense keeps the internet out).
+ufw_rules:
+  - {rule: allow, port: "22", proto: tcp, from: "{{ net_servers }}", comment: "SSH (Servers)"}
+  - {rule: allow, port: "22", proto: tcp, from: "{{ net_trusted }}", comment: "SSH (Trusted)"}
+  - {rule: allow, port: "53", proto: any, comment: "DNS for all zones"}
+  - {rule: allow, port: "80,443", proto: tcp, from: "{{ net_trusted }}", comment: "Pi-hole admin (Trusted)"}
+  - {rule: allow, interface: tailscale0, direction: in, comment: "Tailscale"}
