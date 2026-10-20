@@ -46,3 +46,5 @@
     name: fail2ban
     state: started
     enabled: true
+  # in --check on a host without fail2ban there is no service to look at yet
+  when: not (ansible_check_mode and fail2ban_install is changed)
