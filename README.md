@@ -31,7 +31,7 @@ Now the docs describe the design, and this repo enforces it.
 | Host | Zone | Roles beyond the baseline | What's special |
 |---|---|---|---|
 | `homelab` | Servers | docker, wazuh_agent | Sentinel, Wazuh manager and pfSense syslog ports; Portainer limited to Trusted |
-| `aiserver` | Servers | docker, wazuh_agent | Ollama and web UIs open to Servers and Trusted only |
+| `aiserver` | Servers | docker, wazuh_agent | Web UIs open to Servers and Trusted only; Ollama (no auth) must stay on loopback |
 | `pihole` | Servers | wazuh_agent | DNS open to all zones, admin UI to Trusted only |
 | `kali` | Lab | docker, wazuh_agent | No inbound except Tailscale; Docker from the distro package |
 | `vault` | Vault | docker, wazuh_agent | Inbound on `tailscale0` only, send-only Wazuh agent, Vaultwarden must stay on loopback |
@@ -69,7 +69,7 @@ Tags let you apply one layer: `--tags ufw`, `--tags ssh`, `--tags wazuh`.
 - `sshd -T` (the settings sshd really uses) shows no password, keyboard-interactive or root login
 - ufw is active and denies inbound by default
 - fail2ban has the sshd jail loaded
-- On the vault, port 8080 (Vaultwarden) listens on loopback only
+- On the vault, port 8080 (Vaultwarden) listens on loopback only; on the AI server, so does Ollama (11434)
 - The Wazuh agent is held at the pinned version and reports `connected`
 
 ## CI

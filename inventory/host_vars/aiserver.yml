@@ -1,10 +1,14 @@
 ---
-# Ollama (11434) and web UIs (3000, 3100). Only Servers and Trusted may use them.
+# Web UIs (3000, 3100) open to Servers and Trusted only.
+# Ollama (11434) has no authentication, so it stays on loopback; the verify
+# playbook fails if it is ever published on the LAN.
+verify_loopback_only_ports: [11434]
+
 ufw_rules:
   - {rule: allow, port: "22", proto: tcp, from: "{{ net_servers }}", comment: "SSH (Servers)"}
   - {rule: allow, port: "22", proto: tcp, from: "{{ net_trusted }}", comment: "SSH (Trusted)"}
-  - {rule: allow, port: "3000,3100,11434", proto: tcp, from: "{{ net_servers }}", comment: "AI services (Servers)"}
-  - {rule: allow, port: "3000,3100,11434", proto: tcp, from: "{{ net_trusted }}", comment: "AI services (Trusted)"}
+  - {rule: allow, port: "3000,3100", proto: tcp, from: "{{ net_servers }}", comment: "AI services (Servers)"}
+  - {rule: allow, port: "3000,3100", proto: tcp, from: "{{ net_trusted }}", comment: "AI services (Trusted)"}
   - {rule: allow, interface: tailscale0, direction: in, comment: "Tailscale"}
 
 # Ubuntu 26.04 ships sudo-rs as `sudo`. Its password prompt isn't one Ansible
