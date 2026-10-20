@@ -34,6 +34,15 @@
   when: ufw_docker_user_rules | length > 0
   notify: Reload ufw
 
+# ufw applies /etc/ufw/sysctl.conf on every enable/reload, and its default
+# turns martian logging OFF, silently undoing the common role's hardening.
+- name: Keep ufw from turning martian logging back off
+  ansible.builtin.lineinfile:
+    path: /etc/ufw/sysctl.conf
+    regexp: '^#?\s*net/ipv4/conf/all/log_martians='
+    line: net/ipv4/conf/all/log_martians=1
+  notify: Reload ufw
+
 - name: Deny inbound by default
   community.general.ufw:
     direction: incoming
