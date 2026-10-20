@@ -80,6 +80,16 @@ Every push runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
 
 The Docker and Tailscale roles are linted and syntax-checked in CI but not converged: the runner already has Docker, and Tailscale needs a real tailnet.
 
+### Bugs CI caught before any real server ran this
+
+| Symptom in CI | Cause | Fix |
+|---|---|---|
+| SSH role failed to validate its config: `Missing privilege separation directory: /run/sshd` | Ubuntu 24.04+ starts sshd on demand (`ssh.socket`), so the directory doesn't exist until the first login | Create `/run/sshd` before running `sshd -t` |
+| Wazuh role couldn't parse `ossec.conf` | The agent config has two `<ossec_config>` roots, so it isn't valid XML and XML tools reject it | Targeted regex edits, one element each |
+| Second run changed `net.ipv4.conf.all.log_martians` every time | ufw applies `/etc/ufw/sysctl.conf` on every reload, and its default turns martian logging **off**, silently undoing the hardening | Set the same value in ufw's file |
+
+The third one is the reason for the idempotence check. The first run looked perfect, and the setting would have been off on every server without any error.
+
 ## Design decisions
 
 - **Guard rails before hardening.** The SSH role checks for an installed key before it disables passwords, and ufw rules go in before the default flips to deny. Same rule as my CIS batches: every change has to be reversible or safe to apply over SSH.
