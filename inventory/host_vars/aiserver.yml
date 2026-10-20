@@ -6,3 +6,7 @@ ufw_rules:
   - {rule: allow, port: "3000,3100,11434", proto: tcp, from: "{{ net_servers }}", comment: "AI services (Servers)"}
   - {rule: allow, port: "3000,3100,11434", proto: tcp, from: "{{ net_trusted }}", comment: "AI services (Trusted)"}
   - {rule: allow, interface: tailscale0, direction: in, comment: "Tailscale"}
+
+# Ubuntu 26.04 ships sudo-rs as `sudo`. Its password prompt isn't one Ansible
+# recognizes, so become times out. The classic sudo is still installed as sudo.ws.
+ansible_become_exe: sudo.ws
