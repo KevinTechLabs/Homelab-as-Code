@@ -4,6 +4,10 @@
 
 admin_user: your-ssh-username
 
+# Only for machines with a different login name
+site_users:
+  aiserver: other-username
+
 site_addresses:
   homelab: 192.168.1.X
   aiserver: 192.168.1.X

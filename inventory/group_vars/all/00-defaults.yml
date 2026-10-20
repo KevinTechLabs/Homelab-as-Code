@@ -6,8 +6,11 @@
 # this file. Secrets go in vault.yml, encrypted with ansible-vault.
 
 # The account Ansible logs in as, and the only one allowed to SSH in
+# admin_user is the default; site_users (in site.yml) overrides it per host,
+# for machines where the login name differs.
 admin_user: kevin
-ansible_user: "{{ admin_user }}"
+site_users: {}
+ansible_user: "{{ site_users[inventory_hostname] | default(admin_user) }}"
 # Servers stay on UTC so SIEM and firewall logs line up across hosts
 timezone: Etc/UTC
 
@@ -29,7 +32,7 @@ kali_lan_ip: 10.20.40.10
 vault_lan_ip: 10.20.60.10
 
 # SSH: keys only, root off, only the admin account may log in
-ssh_allow_users: ["{{ admin_user }}"]
+ssh_allow_users: ["{{ ansible_user }}"]
 
 # fail2ban: home zones are whitelisted so a typo from the desktop can't lock
 # it out. IoT, Lab and Guest are deliberately NOT whitelisted.

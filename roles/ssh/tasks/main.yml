@@ -1,7 +1,7 @@
 ---
 - name: Check that the admin account has an authorized key
   ansible.builtin.stat:
-    path: "~{{ admin_user }}/.ssh/authorized_keys"
+    path: "~{{ ansible_user }}/.ssh/authorized_keys"
   register: ssh_admin_keys
   when: ssh_require_authorized_key
 
@@ -10,9 +10,9 @@
     that:
       - ssh_admin_keys.stat.exists
       - ssh_admin_keys.stat.size > 0
-      - admin_user in ssh_allow_users
+      - ansible_user in ssh_allow_users
     fail_msg: >-
-      {{ admin_user }} has no authorized_keys (or is not in ssh_allow_users).
+      {{ ansible_user }} has no authorized_keys (or is not in ssh_allow_users).
       Disabling password login now would lock you out, so nothing was changed.
     quiet: true
   when: ssh_require_authorized_key
