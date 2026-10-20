@@ -17,6 +17,16 @@
     quiet: true
   when: ssh_require_authorized_key
 
+# Ubuntu 24.04+ starts sshd on demand (ssh.socket), so /run/sshd may not exist
+# yet, and `sshd -t` refuses to validate without it.
+- name: Make sure sshd's runtime directory exists
+  ansible.builtin.file:
+    path: /run/sshd
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
 - name: Write the SSH hardening drop-in
   ansible.builtin.template:
     src: 10-hardening.conf.j2
